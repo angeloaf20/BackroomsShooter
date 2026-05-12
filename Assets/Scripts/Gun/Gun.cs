@@ -52,7 +52,6 @@ public class Gun : MonoBehaviour
         _currentMagCount = _gunData.MaxMagCount;
         _currentAmmo = _gunData.MaxAmmo;
         _canShoot = true;
-        _reloadAction.action.performed += OnReloadPerformed;
         _onAmmoChange.Invoke(_currentAmmo);
         _onMagChange.Invoke(_currentMagCount);
     }
@@ -80,48 +79,53 @@ public class Gun : MonoBehaviour
     [ContextMenu("Fire")]
     public void Fire()
     {
-        if (!_canShoot || _currentAmmo <= 0) return;
-
-        _recoilSource.GenerateImpulse();
-
-        OnRecoil?.Invoke();
-        
-
-        StopCoroutine(nameof(ResetFirstShot));
-
-        if (_gunData.IsAutomatic)
+        if (_canShoot && _currentAmmo > 0)
         {
-            StartCoroutine(nameof(AutomaticShoot));
-        }
-        else
-        {
-            _canShoot = false;
-            _muzzleFlash.Play();
-            
+            _recoilSource.GenerateImpulse();
 
-            if (Physics.Raycast(_orientation.position, RotateDirection(), out RaycastHit hit, float.MaxValue))
+            OnRecoil?.Invoke();
+
+
+            StopCoroutine(nameof(ResetFirstShot));
+
+            if (_gunData.IsAutomatic)
             {
-                if (hit.transform.TryGetComponent<Damageable>(out var comp))
-                {
-                    comp.Damage((int)_gunData.BaseDamage);
-                }
-                //OnShootHit.Invoke(hit);
+                StartCoroutine(nameof(AutomaticShoot));
             }
             else
             {
-                //OnShoot.Invoke();
+                _canShoot = false;
+                _isShooting = true;
+                _muzzleFlash.Play();
+
+                Vector3 dir = RotateDirection();
+
+                bool didHit = Physics.Raycast(_orientation.position, dir, out RaycastHit hitInfo, float.MaxValue);
+
+                _currentAmmo--;
+                OnShoot.Invoke(new GunshotResult()
+                {
+                    Hit = hitInfo,
+                    Direction = dir,
+                    Damage = _gunData.BaseDamage
+                });
+
+                if (didHit)
+                {
+                    if (hitInfo.transform.TryGetComponent<Damageable>(out var comp))
+                    {
+                        comp.Damage((int)_gunData.BaseDamage);
+                    }
+                    SpawnDecal(hitInfo);
+
+
+                    Debug.Log(hitInfo.transform.name);
+                }
+
+                _onAmmoChange?.Invoke(_currentAmmo);
+                StartCoroutine(nameof(SemiMuzzleFlash));
+                _isShooting = false;
             }
-
-
-            StartCoroutine(nameof(SemiMuzzleFlash));
-            SpawnDecal(hit);
-            OnShoot.Invoke(new GunshotResult()
-            {
-
-            });
-
-            _currentAmmo--;
-            _onAmmoChange?.Invoke(_currentAmmo);
         }
     }
 
@@ -171,10 +175,6 @@ public class Gun : MonoBehaviour
                 comp.Damage((int)_gunData.BaseDamage);
             }
             SpawnDecal(hitInfo);
-        }
-        else
-        {
-            //OnShoot.Invoke();
         }
 
         _onAmmoChange.Invoke(_currentAmmo);

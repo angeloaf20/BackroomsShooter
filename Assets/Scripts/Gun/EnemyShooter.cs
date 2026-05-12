@@ -12,6 +12,7 @@ public class EnemyShooter : MonoBehaviour
     [SerializeField] private float _recoilSpeed;
     [SerializeField] private float _returnSpeed;
     [SerializeField] private Vector3 _recoilRotation;
+    [SerializeField] private Vector3 _recoilRange;
     [SerializeField] private ParticleSystem _muzzleFlash;
     public Transform Orientation;
     public GunData Gun;
@@ -38,15 +39,9 @@ public class EnemyShooter : MonoBehaviour
     {
         if (IsShooting)
         {
-            if (_currentCooldown <= 0f && _ammoCount > 0)
-            {
-                _currentCooldown = Gun.FireRate + 0.5f;
-                Debug.Log("Enemy shooting!");
-                StartCoroutine(nameof(AutomaticShoot));
-            }
+            Debug.Log("Enemy shooting!");
+            StartCoroutine(nameof(AutomaticShoot));
         }
-
-        _currentCooldown -= Time.deltaTime;
         
         if (_ammoCount <= 0)
         {
@@ -82,7 +77,7 @@ public class EnemyShooter : MonoBehaviour
         {
             if (hitInfo.transform.TryGetComponent<Damageable>(out var comp))
             {
-                comp.Damage(15);
+                comp.Damage(5);
             }
             
         }
@@ -94,16 +89,16 @@ public class EnemyShooter : MonoBehaviour
         yield return new WaitForSeconds(Gun.FireRate);
 
         IsShooting = true;
-        
+        _muzzleFlash.Stop();
     }
 
 
     private Vector3 RotateDirection()
     {
         return Quaternion.Euler(
-            Random.Range(-Gun.RecoilRange.x, Gun.RecoilRange.x),
-            Random.Range(-Gun.RecoilRange.y, Gun.RecoilRange.y),
-            Random.Range(-Gun.RecoilRange.z, Gun.RecoilRange.z)
+            Random.Range(-_recoilRange.x, _recoilRange.x),
+            Random.Range(-_recoilRange.y, _recoilRange.y),
+            Random.Range(-_recoilRange.z, _recoilRange.z)
         ) * Orientation.forward;
     }
 
@@ -114,7 +109,8 @@ public class EnemyShooter : MonoBehaviour
 
     private void Reload()
     {
-
+        _ammoCount = Gun.MaxAmmo;
+       
     }
 
     public void Recoil()
