@@ -7,8 +7,6 @@ public class GunBob : MonoBehaviour
    
     [SerializeField] private float moveSpeed;
     [SerializeField] private float returnSpeed;
-    [SerializeField] private float amplitude;
-    [SerializeField] private float frequency;
     [SerializeField] private Vector2 offset;
     [SerializeField] private float _runningFrequency;
     [SerializeField] private float _runningAmplitude;
