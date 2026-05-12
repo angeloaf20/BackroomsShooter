@@ -13,7 +13,6 @@ public class GunKicker : MonoBehaviour
     private Vector3 _initialPosition;
     private Vector3 _targetPosition;
     private Vector3 _currentPosition;
-    private bool _reached = false;
 
     private void Awake()
     {
